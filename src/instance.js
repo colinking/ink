@@ -64,9 +64,25 @@ export default class Instance {
 			this.container = reconciler.createContainer(this.rootNode, false, false);
 		}
 
+		const shouldHang = true;
 		this.exitPromise = new Promise((resolve, reject) => {
-			this.resolveExitPromise = resolve;
-			this.rejectExitPromise = reject;
+			if (shouldHang) {
+				// Keep the Node event loop running until we've resolved/rejected:
+				const timer = setInterval(() => {}, 1e3);
+
+				this.resolveExitPromise = () => {
+					clearTimeout(timer);
+					resolve();
+				};
+
+				this.rejectExitPromise = () => {
+					clearTimeout(timer);
+					reject();
+				};
+			} else {
+				this.resolveExitPromise = resolve;
+				this.rejectExitPromise = reject;
+			}
 		});
 
 		// Unmount when process exits
